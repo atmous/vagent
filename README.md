@@ -81,6 +81,7 @@ docker run -d \
 
 - 每次 push 到 `main`，会自动构建并推送 Docker Hub
 - 默认会推两个 tag：`latest` 和当天日期，例如 `20260423`
+- 发布的是多架构镜像清单，当前包含：`linux/amd64`、`linux/arm64`、`linux/arm/v7`、`linux/386`、`linux/ppc64le`、`linux/s390x`、`linux/riscv64`、`linux/loong64`
 
 启用前只需要在 GitHub 仓库里添加一个 Actions Secret：
 
