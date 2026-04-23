@@ -74,3 +74,17 @@ docker run -d \
 - `/vagent`
 - CA 证书
 - `/config` 卷
+
+## 自动发布
+
+仓库内置了 GitHub Actions 自动发布流程：[.github/workflows/docker-publish.yml](/opt/codeserver/project/vagent/.github/workflows/docker-publish.yml)。
+
+- 每次 push 到 `main`，会自动构建并推送 Docker Hub
+- 默认会推两个 tag：`latest` 和 `sha-<短提交哈希>`
+- 如果你推的是 Git tag（比如 `v1.0.0`），也会额外推同名镜像 tag
+
+启用前只需要在 GitHub 仓库里添加一个 Actions Secret：
+
+- `DOCKERHUB_TOKEN`
+
+当前工作流默认推送到 `niuniuo/vagent`。如果以后你要改 Docker Hub 仓库名，直接改工作流里的 `IMAGE_NAME` 即可。
