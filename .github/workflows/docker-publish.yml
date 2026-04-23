@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - "v*"
   workflow_dispatch:
 
 concurrency:
@@ -16,7 +14,7 @@ permissions:
   contents: read
 
 env:
-  IMAGE_NAME: niuniuo/vagent
+  IMAGE_NAME: niudea/vagent
 
 jobs:
   docker:
@@ -33,18 +31,13 @@ jobs:
       - name: Log In To Docker Hub
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
-          username: niuniuo
+          username: niudea
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract Docker Metadata
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: ${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha
-            type=ref,event=tag
+      - name: Generate Docker Tags
+        id: vars
+        run: |
+          echo "date_tag=$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
 
       - name: Build And Push Docker Image
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
@@ -53,7 +46,8 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.date_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
