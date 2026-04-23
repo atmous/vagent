@@ -1,0 +1,29 @@
+Linux:
+  client_secret: "${NZ_CLIENT_SECRET}"
+  server: "${NZ_SERVER}"
+  tls: true
+  host:
+    platform: Linux
+    platform_version: "6.1"
+    arch: amd64
+    cpu: ["AMD EPYC 7B12 64-Core Processor"]
+    gpu: ["NVIDIA Tesla T4"]
+    mem_total: 2GB
+    disk_total: 20GB
+    swap_total: 0GB
+    ipv4: "36.50.37.1"
+
+Windows:
+  client_secret: "${NZ_CLIENT_SECRET}"
+  server: "${NZ_SERVER}"
+  tls: true
+  host:
+    platform: Windows
+    platform_version: "Server 2022"
+    arch: amd64
+    cpu: ["Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz"]
+    gpu: ["NVIDIA GeForce RTX 4090", "NVIDIA GeForce RTX 4080 SUPER"]
+    mem_total: 4GB
+    disk_total: 40GB
+    swap_total: 2GB
+    ipv4: "197.255.224.1"
