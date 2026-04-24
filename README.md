@@ -83,8 +83,9 @@ docker run -d \
 - 默认会推两个 tag：`latest` 和当天日期，例如 `20260423`
 - 发布的是多架构镜像清单，当前包含：`linux/amd64`、`linux/arm64`、`linux/arm/v7`、`linux/386`、`linux/ppc64le`、`linux/s390x`、`linux/riscv64`、`linux/loong64`
 
-启用前只需要在 GitHub 仓库里添加一个 Actions Secret：
+启用前需要在 GitHub 仓库里添加两个 Actions Secret：
 
+- `DOCKERHUB_USERNAME`
 - `DOCKERHUB_TOKEN`
 
-当前工作流默认推送到 `niudea/vagent`。如果以后你要改 Docker Hub 仓库名，直接改工作流里的 `IMAGE_NAME` 即可。
+当前工作流会推送到 `${DOCKERHUB_USERNAME}/vagent`。如果以后你要改 Docker Hub 仓库名，不只是改用户名，而是连仓库名也要改，再调整工作流里的 `IMAGE_NAME` 即可。

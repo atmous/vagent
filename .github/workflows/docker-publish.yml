@@ -14,7 +14,8 @@ permissions:
   contents: read
 
 env:
-  IMAGE_NAME: niudea/vagent
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  IMAGE_NAME: ${{ format('{0}/vagent', secrets.DOCKERHUB_USERNAME) }}
 
 jobs:
   docker:
@@ -34,7 +35,7 @@ jobs:
       - name: Log In To Docker Hub
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
-          username: niudea
+          username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Generate Docker Tags
