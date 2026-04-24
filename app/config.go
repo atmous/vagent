@@ -2,11 +2,9 @@ package main
 
 import (
 	"crypto/md5"
-	"errors"
 	"fmt"
 	"net"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -26,12 +24,6 @@ const (
 var (
 	nowFunc = time.Now
 )
-
-const defaultConfigTemplate = `Linux:
-  client_secret: "replace_me"
-  server: "dashboard.example.com:443"
-  tls: true
-`
 
 type Config struct {
 	Agents []Agent
@@ -111,23 +103,6 @@ type hostDoc struct {
 }
 
 type sizeGB uint64
-
-func Ensure(path string) (bool, error) {
-	if _, err := os.Stat(path); err == nil {
-		return false, nil
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return false, err
-	}
-
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return false, err
-	}
-	if err := os.WriteFile(path, []byte(defaultConfigTemplate), 0o644); err != nil {
-		return false, err
-	}
-	return true, nil
-}
 
 func Load(path string, defaultVersion string) (*Config, error) {
 	content, err := os.ReadFile(path)

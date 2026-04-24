@@ -20,15 +20,6 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	created, err := Ensure(*configPath)
-	if err != nil {
-		logger.Fatalf("prepare config: %v", err)
-	}
-	if created {
-		logger.Printf("generated default config at %s; edit it and restart", *configPath)
-		return
-	}
-
 	cfg, err := Load(*configPath, version)
 	if err != nil {
 		logger.Fatalf("load config: %v", err)

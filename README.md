@@ -50,11 +50,3 @@ Windows:
 ```
 
 完整示例见 [config.example.yml](/opt/codeserver/project/vagent/config.example.yml)。
-
-## 生成样板配置
-
-如果 `/config/config.yml` 不存在，容器会先生成一份样板配置，然后退出。填好配置后再启动：
-
-```bash
-docker run --rm -v "$PWD:/config" niudea/vagent:latest
-```

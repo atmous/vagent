@@ -182,43 +182,6 @@ Linux:
 	}
 }
 
-func TestEnsureCreatesDefaultConfig(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "config.yml")
-
-	created, err := Ensure(path)
-	if err != nil {
-		t.Fatalf("Ensure returned error: %v", err)
-	}
-	if !created {
-		t.Fatal("Ensure should report created=true")
-	}
-
-	content, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read config: %v", err)
-	}
-	if !strings.Contains(string(content), "Linux:") {
-		t.Fatalf("default config does not contain group header: %s", string(content))
-	}
-	if !strings.Contains(string(content), `client_secret: "replace_me"`) {
-		t.Fatalf("default config does not contain literal client_secret placeholder: %s", string(content))
-	}
-	if !strings.Contains(string(content), `server: "dashboard.example.com:443"`) {
-		t.Fatalf("default config does not contain literal server placeholder: %s", string(content))
-	}
-	if strings.Contains(string(content), "ipv4:") {
-		t.Fatalf("default config should not contain optional ipv4: %s", string(content))
-	}
-
-	created, err = Ensure(path)
-	if err != nil {
-		t.Fatalf("Ensure returned error on existing file: %v", err)
-	}
-	if created {
-		t.Fatal("Ensure should not recreate an existing file")
-	}
-}
-
 func TestLoadAcceptsSizeStringsWithGBSuffix(t *testing.T) {
 	cfg := loadTestConfig(t, `
 Linux:
