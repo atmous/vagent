@@ -2,51 +2,31 @@
 
 给哪吒面板用的虚拟探针，当前按 Docker 使用。
 
-第一次启动时，如果 `/config/config.yml` 不存在，会自动生成一个最小配置并直接使用。
+使用时只读 `/config/config.yml`，不读取 `NZ_CLIENT_SECRET`、`NZ_SERVER` 这类环境变量。
 
-## 快速运行
+## 运行
 
 ```bash
-docker run -d \
-  --name vagent \
-  --restart unless-stopped \
-  -e NZ_CLIENT_SECRET='replace_me' \
-  -e NZ_SERVER='dashboard.example.com:443' \
-  -v vagent-data:/config \
-  niudea/vagent:latest
-```
-
-自动生成的配置内容如下：
-
-```yaml
+cat > config.yml <<'EOF'
 Linux:
-  client_secret: "${NZ_CLIENT_SECRET}"
-  server: "${NZ_SERVER}"
+  client_secret: "replace_with_your_client_secret"
+  server: "dashboard.example.com:443"
   tls: true
-```
+EOF
 
-## 使用自己的配置
-
-如果你已经有自己的配置文件，直接挂载到 `/config/config.yml`：
-
-```bash
 docker run -d \
   --name vagent \
   --restart unless-stopped \
-  -e NZ_CLIENT_SECRET='replace_me' \
-  -e NZ_SERVER='dashboard.example.com:443' \
   -v "$PWD/config.yml:/config/config.yml:ro" \
   niudea/vagent:latest
 ```
 
 ## 配置示例
 
-配置是顶层实例结构，每个顶层 key 都是一台节点。完整示例见 [config.example.yml](/opt/codeserver/project/vagent/config.example.yml)。
-
 ```yaml
 Linux:
-  client_secret: "${NZ_CLIENT_SECRET}"
-  server: "${NZ_SERVER}"
+  client_secret: "replace_with_your_client_secret"
+  server: "dashboard.example.com:443"
   tls: true
   host:
     platform: Linux
@@ -57,8 +37,8 @@ Linux:
     disk_total: 40GB
 
 Windows:
-  client_secret: "${NZ_CLIENT_SECRET}"
-  server: "${NZ_SERVER}"
+  client_secret: "replace_with_your_client_secret"
+  server: "dashboard.example.com:443"
   tls: true
   host:
     platform: Windows
@@ -69,11 +49,12 @@ Windows:
     disk_total: 80GB
 ```
 
-## 配置规则
+完整示例见 [config.example.yml](/opt/codeserver/project/vagent/config.example.yml)。
 
-- 每台节点至少要有 `client_secret`、`server` 和 `tls`。
-- `host` 里只支持 `platform`、`platform_version`、`arch`、`cpu`、`gpu`、`mem_total`、`disk_total`、`swap_total`、`ipv4`。
-- `host.mem_total`、`host.disk_total`、`host.swap_total` 必须带 `GB` 单位，比如 `4GB`、`40GB`、`2GB`。
-- `host.cpu` 和 `host.gpu` 都是字符串数组。
-- `host.ipv4` 是可选的，只在你想让面板显示 IPv4 归属地时才需要。
-- 不要写 `uuid`、`boot_time`、`metrics`、`report_delay`、`virtualization` 这些字段，程序不读取。
+## 生成样板配置
+
+如果 `/config/config.yml` 不存在，容器会先生成一份样板配置，然后退出。填好配置后再启动：
+
+```bash
+docker run --rm -v "$PWD:/config" niudea/vagent:latest
+```

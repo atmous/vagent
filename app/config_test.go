@@ -200,8 +200,11 @@ func TestEnsureCreatesDefaultConfig(t *testing.T) {
 	if !strings.Contains(string(content), "Linux:") {
 		t.Fatalf("default config does not contain group header: %s", string(content))
 	}
-	if !strings.Contains(string(content), `server: "${NZ_SERVER}"`) {
-		t.Fatalf("default config does not contain NZ_SERVER placeholder: %s", string(content))
+	if !strings.Contains(string(content), `client_secret: "replace_me"`) {
+		t.Fatalf("default config does not contain literal client_secret placeholder: %s", string(content))
+	}
+	if !strings.Contains(string(content), `server: "dashboard.example.com:443"`) {
+		t.Fatalf("default config does not contain literal server placeholder: %s", string(content))
 	}
 	if strings.Contains(string(content), "ipv4:") {
 		t.Fatalf("default config should not contain optional ipv4: %s", string(content))
@@ -287,6 +290,34 @@ Linux:
 		t.Fatal("Load returned nil error, want missing tls error")
 	}
 	if !strings.Contains(err.Error(), "tls is required") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoadRejectsEnvironmentPlaceholders(t *testing.T) {
+	_, err := Load(cfgSourcePath(t, `
+Linux:
+  client_secret: "${NZ_CLIENT_SECRET}"
+  server: "dashboard.example.com:5555"
+  tls: true
+`), "build")
+	if err == nil {
+		t.Fatal("Load returned nil error, want unsupported client_secret placeholder error")
+	}
+	if !strings.Contains(err.Error(), "client_secret must be a literal value in config") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	_, err = Load(cfgSourcePath(t, `
+Linux:
+  client_secret: "secret"
+  server: "${NZ_SERVER}"
+  tls: true
+`), "build")
+	if err == nil {
+		t.Fatal("Load returned nil error, want unsupported server placeholder error")
+	}
+	if !strings.Contains(err.Error(), "server must be a literal value in config") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

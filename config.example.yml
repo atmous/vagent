@@ -1,6 +1,6 @@
 Linux:
-  client_secret: "${NZ_CLIENT_SECRET}"
-  server: "${NZ_SERVER}"
+  client_secret: "replace_with_your_client_secret"
+  server: "dashboard.example.com:443"
   tls: true
   host:
     platform: Linux
@@ -14,8 +14,8 @@ Linux:
     ipv4: "36.50.37.1"
 
 Windows:
-  client_secret: "${NZ_CLIENT_SECRET}"
-  server: "${NZ_SERVER}"
+  client_secret: "replace_with_your_client_secret"
+  server: "dashboard.example.com:443"
   tls: true
   host:
     platform: Windows

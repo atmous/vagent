@@ -28,8 +28,8 @@ var (
 )
 
 const defaultConfigTemplate = `Linux:
-  client_secret: "${NZ_CLIENT_SECRET}"
-  server: "${NZ_SERVER}"
+  client_secret: "replace_me"
+  server: "dashboard.example.com:443"
   tls: true
 `
 
@@ -134,7 +134,6 @@ func Load(path string, defaultVersion string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	content = []byte(os.ExpandEnv(string(content)))
 
 	var root yaml.Node
 	if err := yaml.Unmarshal(content, &root); err != nil {
@@ -183,10 +182,16 @@ func resolveAgent(name string, doc agentDoc, index int, defaultVersion string) (
 	if server == "" {
 		return Agent{}, fmt.Errorf("server is required")
 	}
+	if err := rejectEnvPlaceholder("server", server); err != nil {
+		return Agent{}, err
+	}
 
 	clientSecret := strings.TrimSpace(doc.ClientSecret)
 	if clientSecret == "" {
 		return Agent{}, fmt.Errorf("client_secret is required")
+	}
+	if err := rejectEnvPlaceholder("client_secret", clientSecret); err != nil {
+		return Agent{}, err
 	}
 	if doc.TLS == nil {
 		return Agent{}, fmt.Errorf("tls is required")
@@ -258,6 +263,9 @@ func validateHostNode(node *yaml.Node) error {
 
 func resolveHost(doc hostDoc, name string, server string) (Host, error) {
 	ipv4 := strings.TrimSpace(doc.IPv4)
+	if err := rejectEnvPlaceholder("host.ipv4", ipv4); err != nil {
+		return Host{}, err
+	}
 	if ipv4 != "" {
 		parsed := net.ParseIP(ipv4)
 		if parsed == nil || parsed.To4() == nil {
@@ -295,6 +303,13 @@ func resolveHost(doc hostDoc, name string, server string) (Host, error) {
 	}
 	host.BootTime = defaultHostBootTime(rng, host)
 	return host, nil
+}
+
+func rejectEnvPlaceholder(field string, value string) error {
+	if strings.Contains(value, "${") && strings.Contains(value, "}") {
+		return fmt.Errorf("%s must be a literal value in config; environment variable placeholders are not supported", field)
+	}
+	return nil
 }
 
 func defaultMetrics(host Host, name string, server string) Metrics {

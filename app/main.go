@@ -13,7 +13,7 @@ import (
 var version = "dev"
 
 func main() {
-	configPath := flag.String("config", envOrDefault("VAGENT_CONFIG", "/config/config.yml"), "path to the vagent config file")
+	configPath := flag.String("config", "/config/config.yml", "path to the vagent config file")
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lmicroseconds)
@@ -25,7 +25,8 @@ func main() {
 		logger.Fatalf("prepare config: %v", err)
 	}
 	if created {
-		logger.Printf("generated default config at %s", *configPath)
+		logger.Printf("generated default config at %s; edit it and restart", *configPath)
+		return
 	}
 
 	cfg, err := Load(*configPath, version)
@@ -37,13 +38,6 @@ func main() {
 	if err := runAgents(ctx, logger, cfg); err != nil {
 		logger.Fatalf("run agents: %v", err)
 	}
-}
-
-func envOrDefault(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return fallback
 }
 
 func runAgents(ctx context.Context, logger *log.Logger, cfg *Config) error {

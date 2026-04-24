@@ -29,6 +29,4 @@ COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifica
 
 VOLUME ["/config"]
 
-ENV VAGENT_CONFIG=/config/config.yml
-
 ENTRYPOINT ["/vagent"]
