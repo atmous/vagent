@@ -1,4 +1,4 @@
-module github.com/niuniuo/vagent
+module github.com/niudea/vagent
 
 go 1.24.0
 

@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/niuniuo/vagent/nezha"
+	"github.com/niudea/vagent/nezha"
 )
 
 type stateProfile struct {
