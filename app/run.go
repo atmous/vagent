@@ -16,8 +16,13 @@ import (
 
 const (
 	reconnectDelay     = 5 * time.Second
+	maxReconnectDelay  = 5 * time.Minute
 	reportHostInterval = 10 * time.Minute
 	rpcTimeout         = 10 * time.Second
+	// healthySessionThreshold is how long a session must stay up before the
+	// consecutive-failure streak is reset, so a single blip after a long
+	// healthy run retries quickly instead of starting at the capped delay.
+	healthySessionThreshold = time.Minute
 )
 
 type probe struct {
@@ -46,19 +51,47 @@ func newProbe(cfg Agent, writer io.Writer, flags int) *probe {
 
 func (p *probe) run(ctx context.Context) {
 	p.log.Printf("starting node, target=%s uuid=%s", p.cfg.Server, p.cfg.UUID)
+	failures := 0
 	for {
+		start := time.Now()
 		if err := p.runSession(ctx); err != nil && ctx.Err() == nil {
 			p.log.Printf("session ended: %v", err)
 		}
 		if ctx.Err() != nil {
 			return
 		}
+		// A session that stayed up for a while was healthy; a failure after
+		// it is a fresh incident, not a continuation of the previous streak.
+		if time.Since(start) >= healthySessionThreshold {
+			failures = 0
+		}
+		failures++
+		delay := reconnectBackoff(failures)
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(reconnectDelay):
+		case <-time.After(delay):
 		}
 	}
+}
+
+// reconnectBackoff grows the wait between retries (5s, 10s, 20s, 40s, ...)
+// up to maxReconnectDelay, so a permanently dead or rejecting server is not
+// hammered every 5 seconds forever. failures is the consecutive-failure count.
+func reconnectBackoff(failures int) time.Duration {
+	if failures <= 1 {
+		return reconnectDelay
+	}
+	// 2^(failures-1), capped so the shift cannot overflow.
+	shift := failures - 1
+	if shift > 6 {
+		shift = 6
+	}
+	delay := reconnectDelay * time.Duration(1<<uint(shift))
+	if delay > maxReconnectDelay || delay < reconnectDelay {
+		return maxReconnectDelay
+	}
+	return delay
 }
 
 func (p *probe) runSession(ctx context.Context) error {
