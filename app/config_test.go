@@ -314,3 +314,66 @@ func setNowForTest(t *testing.T, unixSeconds int64) {
 		nowFunc = oldNow
 	})
 }
+
+func TestLoadRejectsInvalidServerAddress(t *testing.T) {
+	invalid := []string{
+		"dashboard.example.com",             // missing port (gRPC would silently use 443)
+		"http://dashboard.example.com:5555", // URL scheme
+		"https://dashboard.example.com:5555",
+		"not a host!!!",               // not host:port at all
+		":5555",                       // empty host
+		"dashboard.example.com:99999", // port out of range
+		"dashboard.example.com:abc",   // non-numeric port
+		"dashboard.example.com:0",     // port zero
+		"foo bar:5555",                // whitespace in host
+	}
+	for _, server := range invalid {
+		_, err := Load(cfgSourcePath(t, "Linux:\n  client_secret: \"secret\"\n  server: \""+server+"\"\n  tls: true\n"), "build")
+		if err == nil {
+			t.Errorf("server %q: Load returned nil error, want invalid server error", server)
+			continue
+		}
+		if !strings.Contains(err.Error(), "server") {
+			t.Errorf("server %q: unexpected error: %v", server, err)
+		}
+	}
+}
+
+func TestLoadAcceptsValidServerAddress(t *testing.T) {
+	valid := []string{
+		"dashboard.example.com:443",
+		"dashboard.example.com:5555",
+		"127.0.0.1:5555",
+		"[::1]:5555",
+		"localhost:8080",
+	}
+	for _, server := range valid {
+		cfg, err := Load(cfgSourcePath(t, "Linux:\n  client_secret: \"secret\"\n  server: \""+server+"\"\n  tls: true\n"), "build")
+		if err != nil {
+			t.Errorf("server %q: Load returned error: %v", server, err)
+			continue
+		}
+		if cfg.Agents[0].Server != server {
+			t.Errorf("server %q: agent server = %q", server, cfg.Agents[0].Server)
+		}
+	}
+}
+
+func TestLoadRejectsDuplicateAgentNames(t *testing.T) {
+	_, err := Load(cfgSourcePath(t, `
+Linux:
+  client_secret: "secret"
+  server: "dashboard.example.com:5555"
+  tls: true
+Linux:
+  client_secret: "secret2"
+  server: "other.example.com:5555"
+  tls: true
+`), "build")
+	if err == nil {
+		t.Fatal("Load returned nil error, want duplicate node error")
+	}
+	if !strings.Contains(err.Error(), `node "Linux" is defined more than once`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
