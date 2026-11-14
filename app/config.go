@@ -120,11 +120,16 @@ func Load(path string, defaultVersion string) (*Config, error) {
 
 	mapping := root.Content[0]
 	cfg := &Config{Agents: make([]Agent, 0, len(mapping.Content)/2)}
+	seen := make(map[string]struct{}, len(mapping.Content)/2)
 	for i := 0; i < len(mapping.Content); i += 2 {
 		name := strings.TrimSpace(mapping.Content[i].Value)
 		if name == "" {
 			continue
 		}
+		if _, dup := seen[name]; dup {
+			return nil, fmt.Errorf("node %q is defined more than once", name)
+		}
+		seen[name] = struct{}{}
 
 		if err := validateAgentNode(mapping.Content[i+1]); err != nil {
 			return nil, fmt.Errorf("node %q: %w", name, err)
@@ -158,6 +163,9 @@ func resolveAgent(name string, doc agentDoc, index int, defaultVersion string) (
 		return Agent{}, fmt.Errorf("server is required")
 	}
 	if err := rejectEnvPlaceholder("server", server); err != nil {
+		return Agent{}, err
+	}
+	if err := validateServerAddress(server); err != nil {
 		return Agent{}, err
 	}
 
@@ -283,6 +291,31 @@ func resolveHost(doc hostDoc, name string, server string) (Host, error) {
 func rejectEnvPlaceholder(field string, value string) error {
 	if strings.Contains(value, "${") && strings.Contains(value, "}") {
 		return fmt.Errorf("%s must be a literal value in config; environment variable placeholders are not supported", field)
+	}
+	return nil
+}
+
+// validateServerAddress requires an explicit host:port. Without it, gRPC
+// silently defaults a bare host to port 443 and turns a typo such as
+// "http://host:443" or "not a host" into a confusing dial error that is
+// retried forever, instead of a clear config error at startup.
+func validateServerAddress(server string) error {
+	if strings.Contains(server, "://") {
+		return fmt.Errorf("server must be host:port without a URL scheme (got %q)", server)
+	}
+	host, port, err := net.SplitHostPort(server)
+	if err != nil {
+		return fmt.Errorf("server must be host:port (got %q): %w", server, err)
+	}
+	if strings.TrimSpace(host) == "" {
+		return fmt.Errorf("server host must not be empty (got %q)", server)
+	}
+	if strings.ContainsAny(host, " \t\r\n") {
+		return fmt.Errorf("server host must not contain whitespace (got %q)", server)
+	}
+	n, err := strconv.Atoi(port)
+	if err != nil || n < 1 || n > 65535 {
+		return fmt.Errorf("server port must be a number between 1 and 65535 (got %q)", server)
 	}
 	return nil
 }
